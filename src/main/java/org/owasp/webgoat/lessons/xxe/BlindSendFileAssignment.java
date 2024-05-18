@@ -82,7 +82,7 @@ public class BlindSendFileAssignment extends AssignmentEndpoint {
     }
   }
 
-  @PostMapping(path = "xxe/blind", consumes = ALL_VALUE, produces = APPLICATION_JSON_VALUE)
+ @PostMapping(path = "xxe/blind", consumes = ALL_VALUE, produces = APPLICATION_JSON_VALUE)
   @ResponseBody
   public AttackResult addComment(@RequestBody String commentStr) {
     var fileContentsForUser = userToFileContents.getOrDefault(getWebSession().getUser(), "");
@@ -104,10 +104,17 @@ public class BlindSendFileAssignment extends AssignmentEndpoint {
     return failed(this).build();
   }
 
-  @Override
-  public void initialize(WebGoatUser user) {
-    comments.reset(user);
-    userToFileContents.remove(user);
-    createSecretFileWithRandomContents(user);
+protected Comment parseXml(String xml) throws XMLStreamException, JAXBException {
+    var jc = JAXBContext.newInstance(Comment.class);
+    var xif = XMLInputFactory.newInstance();
+
+    if (webSession.isSecurityEnabled()) {
+      xif.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, ""); // Compliant
+      xif.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ""); // compliant
+    }
+
+    var xsr = xif.createXMLStreamReader(new StringReader(xml));
+
+    var unmarshaller = jc.createUnmarshaller();
+    return (Comment) unmarshaller.unmarshal(xsr);
   }
-}
